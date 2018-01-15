@@ -1,0 +1,56 @@
+<model>
+    <mount>//OPNsense/openvpn/openvpn-csc</mount>
+    <description>Opevpn ccd configuration</description>
+    <version>1.0.0</version>
+    <items>
+        <openvpn-csc type="ArrayField">
+            <enabled type="BooleanField">
+                <default>1</default>
+                <Required>Y</Required>
+            </enabled>
+            <common_name type="TextField">
+                <Required>Y</Required>
+                <mask>/^([0-9a-zA-Z._\-]){1,128}$/u</mask>
+            </common_name>
+            <description type="TextField">
+                <Required>N</Required>
+            </description>
+            <tunnel_network type="TextField">
+                <Required>Y</Required>
+                <mask>/^([0-9a-zA-Z._\-]){1,128}$/u</mask>
+            </tunnel_network>
+            <tunnel_networkv6 type="TextField">
+                <Required>Y</Required>
+                <mask>/^([0-9a-zA-Z._\-]){1,128}$/u</mask>
+            </tunnel_networkv6>
+            <tunnel_network type="TextField">
+                <Required>Y</Required>
+                <mask>/^([0-9a-zA-Z._\-]){1,128}$/u</mask>
+            </tunnel_network>
+            <local_network type="TextField">
+                <Required>Y</Required>
+                <mask>/^([0-9a-zA-Z._\-]){1,128}$/u</mask>
+            </local_network>
+            <local_network6 type="TextField">
+                <Required>Y</Required>
+                <mask>/^([0-9a-zA-Z._\-]){1,128}$/u</mask>
+            </local_network6>
+            <remote_network type="TextField">
+                <Required>Y</Required>
+                <mask>/^([0-9a-zA-Z._\-]){1,128}$/u</mask>
+            </remote_network>
+            <remote_networkv6 type="TextField">
+                <Required>Y</Required>
+                <mask>/^([0-9a-zA-Z._\-]){1,128}$/u</mask>
+            </remote_networkv6>
+            <push_reset type="BooleanField">
+                <default>1</default>
+                <Required>Y</Required>
+            </push_reset>
+            <block type="BooleanField">
+                <default>1</default>
+                <Required>Y</Required>
+            </block>
+        </openvpn-csc>
+    </items>
+</model>
