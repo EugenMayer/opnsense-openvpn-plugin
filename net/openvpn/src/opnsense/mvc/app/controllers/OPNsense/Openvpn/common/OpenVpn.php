@@ -40,36 +40,6 @@ use \OPNsense\Core\Config;
  */
 class OpenVpn
 {
-
-    /**
-     * @param CCD $dynamicCDD
-     * @param null $servers
-     */
-    static public function resetToStaticOrDelete(CCD $dynamicCDD, $servers = null)
-    {
-        if ($servers == NULL) {
-            $servers = self::getDynamicCCDopenVPNServers();
-        }
-        $staticCCDs = self::getOpenVpnCCD();
-        if (isset($staticCCDs[$dynamicCDD->common_name])) {
-            $ccd = $staticCCDs[$dynamicCDD->common_name];
-            foreach ($servers as $server) {
-                // thats a openvpn legacy tool to create CCDs for a specific server
-                // lets use this to ensure compatibility
-                $ccdConfigAsString = openvpn_csc_conf(self::ccdToLegacyStructure($ccd), $server);
-                // this will override - reset the overlayed one with the original from static
-                self::writeCCDforServer($ccd->common_name, $ccdConfigAsString, $server['vpnid']);
-            }
-        } else {
-            // since the CCD does not exist in static, remove it. This is already more then the current
-            //  core implementation does it does nothing in this case
-            foreach ($servers as $server) {
-                self::deleteCCDforServer($dynamicCDD->common_name, $server['vpnid']);
-            }
-        }
-
-    }
-
     /**
      * @param $common_name
      * @return CCD
@@ -85,25 +55,12 @@ class OpenVpn
      */
     static public function generateCCDconfigurationOnDisk($dynamicCDDs, $servers = null, $reset = false)
     {
-        if ($servers == NULL) {
-            $servers = self::getDynamicCCDopenVPNServers();
-        }
-
         $staticCCDs = self::getOpenVpnCCD();
         // since this whole thing should only "override" or generate those one, we defined
         // we do not work through the openvpn staticCCD but only ours
         // and either generate new ones or overwrite existing ones
 
-        foreach ($dynamicCDDs as $dynamicCCD) {
-            $ccd = $dynamicCCD;
-            /**
-             * if an openVPN static_ccd exists, rather use our
-             * dynamicCCD as a overlay, so use all fields from openVPN except some few
-             * we offer in the dynamicCCD
-             */
-            if (array_key_exists($dynamicCCD->common_name, $staticCCDs)) {
-                $ccd = self::overlayCcd($staticCCDs[$dynamicCCD->common_name], $dynamicCCD);
-            }
+        foreach ($staticCCDs as $ccd) {
 
             // now generate that CCD for every server
             foreach ($servers as $server) {
@@ -146,49 +103,6 @@ class OpenVpn
     static function ccdToLegacyStructure(CCD $ccd)
     {
         return (array)$ccd;
-    }
-
-    /**
-     * returns a CCD, which is based on your static(default) ccd and has been overlayed by the dynamic CCD
-     * @param CCD $static
-     * @param CCD $dynamic
-     * @return CCD
-     */
-    static function overlayCcd(CCD $static, CCD $dynamic)
-    {
-        // lets keep the reference intact
-        $ccd = clone($static);
-
-        $overridable_attribs = ['tunnel_network', 'tunnel_network6'];
-        foreach ($overridable_attribs as $attrib) {
-            if (isset($dynamic->{$attrib})) {
-                $ccd->{$attrib} = $dynamic->{$attrib};
-            }
-        }
-        return $ccd;
-    }
-
-    /**
-     * @return array an array of VPN-Servers ( stdClass ) which have the feature dynamic-ccd-lookup enabled
-     */
-    static function getDynamicCCDopenVPNServers()
-    {
-        $configObj = Config::getInstance()->object();
-        $servers = array();
-
-        if (isset($configObj->openvpn)) {
-            /** @var \SimpleXMLElement $root */
-            $root = $configObj->openvpn;
-            foreach ($root->children() as $name => $vpnServer) {
-                // if that VPN server has dynamic ccd enabled
-                if ($vpnServer->{'dynamic-ccd-lookup'} == '1') {
-                    // convert that one to an assoc array for easier usage in the toolchain
-                    $servers[$name] = json_decode(json_encode($vpnServer), true);
-                }
-            }
-        }
-
-        return $servers;
     }
 
     /**
