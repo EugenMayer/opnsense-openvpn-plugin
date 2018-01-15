@@ -29,7 +29,7 @@
 namespace OPNsense\Openvpn\common;
 
 
-class CCD
+class CcdDts
 {
     public $common_name;
     // CIDR
@@ -65,4 +65,24 @@ class CCD
         return 32-log(($long ^ $base)+1,2);
     }
 
+    /**
+     * @param array $ccdAsArray
+     * @return CcdDts
+     */
+    static public function fromModelNode($ccdAsArray)
+    {
+        $ccd_attributes = array_keys(get_class_vars('OPNsense\OpenVpn\common\CcdDts'));
+
+        $obj = (object) $ccdAsArray;
+        $ccd = new CcdDts();
+
+        // map all our legacy attributes on our helper class
+        foreach ($ccd_attributes as $attr) {
+            if (isset($obj->{$attr})) {
+                $ccd->{$attr} = $obj->{$attr};
+            }
+        }
+
+        return $ccd;
+    }
 }

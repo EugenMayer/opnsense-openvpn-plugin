@@ -27,7 +27,7 @@ use OPNsense\Base\BaseModel;
 
 class Ccd extends BaseModel
 {
-    public function getCcdByName($common_name) {
+    public function getUuidByCcdName($common_name) {
         foreach($this->getNodes()['ccds']['ccd'] as $uuid => $ccd) {
             if ($ccd['common_name'] == $common_name) {
                 return $uuid;

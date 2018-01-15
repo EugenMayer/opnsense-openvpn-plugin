@@ -32,6 +32,7 @@ require_once("util.inc");
 require_once("plugins.inc.d/openvpn.inc");
 
 use \OPNsense\Core\Config;
+use \OPNsense\Openvpn\Ccd;
 
 /**
  * Handles all kind of OpenVPN based operations
@@ -40,31 +41,29 @@ use \OPNsense\Core\Config;
  */
 class OpenVpn
 {
-    /**
-     * @param $common_name
-     * @return CCD
-     */
-    static public function getStaticCcd($common_name) {
-        $staticCCDs = self::getOpenVpnCCD();
-        return $staticCCDs[$common_name];
-    }
 
     /**
-     * @param CCD[] $dynamicCDDs
+     * @param CcdDts[] $staticCCDs
      * @param null $servers if null, it means all
+     * @return void
      */
-    static public function generateCCDconfigurationOnDisk($dynamicCDDs, $servers = null, $reset = false)
+    static public function generateCCDconfigurationOnDisk($staticCCDs = NULL, $servers = null)
     {
-        $staticCCDs = self::getOpenVpnCCD();
+        if ($staticCCDs == NULL) {
+            $staticCCDs = self::getOpenVpnCCDs();
+        }
+
+        if ($servers == NULL) {
+            $servers = self::getServers();
+        }
         // since this whole thing should only "override" or generate those one, we defined
         // we do not work through the openvpn staticCCD but only ours
         // and either generate new ones or overwrite existing ones
 
         foreach ($staticCCDs as $ccd) {
-
             // now generate that CCD for every server
-            foreach ($servers as $server) {
-                // thats a openvpn legacy tool to create CCDs for a specific server
+            foreach ($servers as $name => $server) {
+                // that's a openvpn legacy tool to create CCDs for a specific server
                 // lets use this to ensure compatibility
                 $ccdConfigAsString = openvpn_csc_conf(self::ccdToLegacyStructure($ccd), $server);
 
@@ -72,6 +71,67 @@ class OpenVpn
             }
         }
     }
+
+
+    /**
+     * This method is missing in the legacy API completely
+     * @param string $common_name
+     * @param string $openvpn_id
+     */
+    static function deleteCCDforServer($common_name, $openvpn_id)
+    {
+        $target_filename = "/var/etc/openvpn-csc/{$openvpn_id}/{$common_name}";
+        @unlink($target_filename);
+    }
+
+    /**
+     * This method is missing in the legacy API completely
+     * @param string $common_name
+     * @param string $openvpn_id
+     */
+    static function deleteCCD($common_name, $openvpn_id)
+    {
+        $servers = self::getServers();
+        foreach ($servers as $server) {
+            self::deleteCCDforServer($common_name, $server['vpnid']);
+        }
+    }
+
+    /**
+     * @param $common_name
+     * @return CcdDts
+     */
+    static public function getStaticCcd($common_name)
+    {
+        $staticCCDs = self::getOpenVpnCCDs();
+        return $staticCCDs[$common_name];
+    }
+
+
+    /**
+     * @return array an array of VPN-Servers ( stdClass ) which have the feature dynamic-ccd-lookup enabled
+     */
+    static function getServers()
+    {
+        $configObj = Config::getInstance()->object();
+        $servers = array();
+
+        if (isset($configObj->openvpn)) {
+            /** @var \SimpleXMLElement $root */
+            $root = $configObj->openvpn;
+            foreach ($root->children() as $tag => $vpnServer) {
+                // if that VPN server has dynamic ccd enabled
+                if ($tag == 'openvpn-server') {
+                    // ensured thats actually a openvpn server and now openvpn-csc .. they are in the same root node
+                    $server = json_decode(json_encode($vpnServer), true);
+                    $servers[] = $server;
+                }
+            }
+        }
+
+        return $servers;
+    }
+
 
     /**
      * Writes the ccd configuration we created using the legacy method to the disk at the correct location for a specific server
@@ -89,48 +149,24 @@ class OpenVpn
         chgrp($target_filename, 'nobody');
     }
 
-    /**
-     * This method is missing in the legacy API completely
-     * @param string $common_name
-     * @param string $openvpn_id
-     */
-    static function deleteCCDforServer($common_name, $openvpn_id)
-    {
-        $target_filename = "/var/etc/openvpn-csc/{$openvpn_id}/{$common_name}";
-        @unlink($target_filename);
-    }
 
-    static function ccdToLegacyStructure(CCD $ccd)
+    static function ccdToLegacyStructure(CcdDts $ccd)
     {
         return (array)$ccd;
     }
 
     /**
-     * @return CCD[]
+     * @return CcdDts[]
      */
-    static function getOpenVpnCCD()
+    static function getOpenVpnCCDs()
     {
-        $configObj = Config::getInstance()->object();
+        $ccdsModel = new Ccd();
 
-        if (isset($configObj->openvpn) && isset($configObj->openvpn->{'openvpn-csc'})) {
-            $ccds = array();
-            $ccd_attributes = array_keys(get_class_vars('OPNsense\Freeradius\common\CCD'));
-            // odd need of parsing them here, otherwise the result gets oddly transpiled
-
-            foreach ($configObj->openvpn->{'openvpn-csc'} as $ccdXml) {
-                $obj = json_decode(json_encode($ccdXml));
-                $ccd = new CCD();
-
-                // map all our legacy attributes on our helper class
-                foreach ($ccd_attributes as $attr) {
-                    if (isset($obj->{$attr})) {
-                        $ccd->{$attr} = $obj->{$attr};
-                    }
-                }
-                $ccds[$ccd->common_name] = $ccd;
-            }
-            return $ccds;
+        $ccds = array();
+        foreach ($ccdsModel->getNodes()['ccds']['ccd'] as $ccd) {
+            $ccd = CcdDts::fromModelNode($ccd);
+            $ccds[$ccd->common_name] = $ccd;
         }
-        return NULL;
+        return $ccds;
     }
 }

@@ -6,6 +6,8 @@ namespace OPNsense\Openvpn\Api;
 use \OPNsense\Base\ApiMutableModelControllerBase;
 use \OPNsense\Core\Config;
 use \OPNsense\Openvpn\Ccd;
+use OPNsense\Openvpn\common\CcdDts;
+use OPNsense\Openvpn\common\OpenVpn;
 
 /**
  * Class CcdController
@@ -42,9 +44,12 @@ class CcdController extends ApiMutableModelControllerBase
             }
 
             $data = $this->request->getPost("ccd");
-            if ($this->getModel()->getCcdByName($data['common_name']) == NULL) {
+            if ($this->getModel()->getUuidByCcdName($data['common_name']) == NULL) {
                 $node->setNodes($data);
-                return $this->validateAndSave($node, 'ccd');
+                $result = $this->validateAndSave($node, 'ccd');
+                OpenVpn::generateCCDconfigurationOnDisk([CcdDts::fromModelNode($data)]);
+                $result['modified_uuid'] = $this->getModel()->getUuidByCcdName($data['common_name']);
+                return $result;
             } else {
                 return ["result" => "failed", 'validation' => "a ccd with the name '{$data['common_name']}' already exists"];
             }
@@ -70,18 +75,19 @@ class CcdController extends ApiMutableModelControllerBase
     {
         if ($this->request->isPost() && $this->request->hasPost("ccd")) {
             $data = $this->request->getPost("ccd");
-            $lookupUuid = $this->getModel()->getCcdByName($data['common_name']);
+            $lookupUuid = $this->getModel()->getUuidByCcdName($data['common_name']);
             if ($lookupUuid == NULL) {
                 // create case
                 $node = $this->getModel()->ccds->ccd->Add();
                 $node->setNodes($data);
-                return $this->validateAndSave($node, 'ccd');
             } else {
                 // update case
                 $node = $this->getModel()->getNodeByReference("ccds.ccd.$lookupUuid");
-                $node->setNodes($data);
-                return $this->validateAndSave($node, 'ccd');
             }
+            $result = $this->validateAndSave($node, 'ccd');
+            OpenVpn::generateCCDconfigurationOnDisk([CcdDts::fromModelNode($data)]);
+            $result['modified_uuid'] = $this->getModel()->getUuidByCcdName($data['common_name']);
+            return $result;
         }
         return array("result" => "failed");
     }
@@ -110,9 +116,20 @@ class CcdController extends ApiMutableModelControllerBase
     {
         $result = array('result' => 'failed');
         if ($this->request->isPost()) {
+            $node = $this->getModel()->getNodeByReference("ccds.ccd.$uuid");
+            if ($node == NULL) {
+                return [];
+            }
+
+            $ccd = CcdDts::fromModelNode($node->getNodes());
+            OpenVpn::deleteCCD($ccd->common_name);
             if ($this->getModel()->ccds->ccd->del($uuid)) {
                 $result = $this->validateAndSave();
+                $result['modified_uuid'] = $uuid;
+                return $result;
             }
+
+            return [];
         }
         return $result;
     }
