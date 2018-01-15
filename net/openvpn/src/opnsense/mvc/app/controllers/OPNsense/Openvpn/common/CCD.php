@@ -55,23 +55,6 @@ class CCD
      */
     public $block = NULL;
 
-
-    /**
-     * @return CCD
-     */
-    static public function fromFreeradiusUsers($user)
-    {
-        $ccd = new CCD();
-        $ccd->common_name = $user->username->__toString();
-
-        if (isset($user->ip) && isset($user->subnet)) {
-            $ip = $user->ip->__toString();
-            $prefix = self::netmaskToCIDRprefix($user->subnet->__toString());
-            $ccd->tunnel_network = "$ip/$prefix";
-        }
-        return $ccd;
-    }
-
     /**
      * @param string $netmask netmask as 255.255.255.0
      * @return int prefix like 24 for the above
