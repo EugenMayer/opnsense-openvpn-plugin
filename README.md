@@ -13,6 +13,6 @@ You should install / use it along the core openvpn "plugin" - consider this plug
 On your opnsense box do
 
 ```bash
-curl -Lo os-openvpn-devel-0.0.2.txz https://github.com/EugenMayer/opnsense-openvpn-plugin/raw/master/dist/os-openvpn-devel-0.0.2.txz
-pkg add os-openvpn-devel-0.0.2.txz
+curl -Lo os-openvpn-devel-0.0.3.txz https://github.com/EugenMayer/opnsense-openvpn-plugin/raw/master/dist/os-openvpn-devel-0.0.3.txz
+pkg add os-openvpn-devel-0.0.3.txz
 ```

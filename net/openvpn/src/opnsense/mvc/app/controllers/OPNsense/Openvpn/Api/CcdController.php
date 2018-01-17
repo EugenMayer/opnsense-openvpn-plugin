@@ -83,6 +83,7 @@ class CcdController extends ApiMutableModelControllerBase
             } else {
                 // update case
                 $node = $this->getModel()->getNodeByReference("ccds.ccd.$lookupUuid");
+                $node->setNodes($data);
             }
             $result = $this->validateAndSave($node, 'ccd');
             OpenVpn::generateCCDconfigurationOnDisk([CcdDts::fromModelNode($data)]);
