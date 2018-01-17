@@ -87,9 +87,8 @@ class OpenVpn
     /**
      * This method is missing in the legacy API completely
      * @param string $common_name
-     * @param string $openvpn_id
      */
-    static function deleteCCD($common_name, $openvpn_id)
+    static function deleteCCD($common_name)
     {
         $servers = self::getServers();
         foreach ($servers as $server) {
