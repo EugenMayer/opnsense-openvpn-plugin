@@ -60,4 +60,38 @@ If a ccd with that `common_name` already exists, and update will be done, otherw
 - This will return all ccd entries
 
 `GET` on`api/openvpn/ccd/getCcd/<uuid>`
-- This will return you the ccd matching this uuid 
+- This will return you the ccd matching this uuid
+
+## Development
+
+### Start
+
+No magic involved here, fires up a vagrant build on the recent [opnsense-build](https://app.vagrantup.com/eugenmayer/boxes/opnsense)
+
+```
+make start
+```
+
+1. You see the plugin deployed in the opnsense instance, access it by https://localhost:10443
+2. If you change code, just run `make sync_plugin`
+3. Its all on you now :)
+
+### Stop ( pause )
+To stop the vm ( not losing state, continue later )
+```   
+make stop
+```
+
+### Rm ( end, remove all )
+To remove the VM
+```
+make rm
+```
+
+## During development
+
+### Plugins
+
+If you change code of the plugin, run
+
+    make sync_plugin 
