@@ -24,7 +24,7 @@ pkg add os-openvpn-devel-0.0.3.txz
 
 Enable/install the plugin
 
-#### Create / Update Host Entry
+#### Create / Update CCDs
 
 `POST` on `api/openvpn/ccd/setCcdBy`
 ```
@@ -48,13 +48,13 @@ Enable/install the plugin
 If a ccd with that `common_name` already exists, and update will be done, otherwise it will be created 
 
 
-#### Delete Host Entry
+#### Delete CCD
 
 `POST`  on `api/openvpn/ccd/delCcd/<uuid>`
 
 -> If the ccd matching the given <uuid> it will be deleted
 
-#### Get Host Entry(s)
+#### Get CCD(s)
 
 `GET` on `api/openvpn/ccd/getCcd` 
 - This will return all ccd entries
