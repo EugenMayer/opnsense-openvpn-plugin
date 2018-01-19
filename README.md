@@ -16,8 +16,9 @@ You should install / use it along the core openvpn "plugin" - consider this plug
 On your opnsense box do
 
 ```bash
-curl -Lo os-openvpn-devel-0.0.3.txz https://github.com/EugenMayer/opnsense-openvpn-plugin/raw/master/dist/os-openvpn-devel-0.0.3.txz
-pkg add os-openvpn-devel-0.0.3.txz
+export openvpn_version=0.0.4
+curl -Lo os-openvpn-devel-${openvpn_version}.txz https://github.com/EugenMayer/opnsense-openvpn-plugin/raw/master/dist/os-openvpn-devel-${openvpn_version}.txz
+pkg add os-openvpn-devel-${openvpn_version}.txz
 ```
 
 ## Using the API
@@ -26,7 +27,7 @@ Enable/install the plugin
 
 #### Create / Update CCDs
 
-`POST` on `api/openvpn/ccd/setCcdBy`
+`POST` on `api/openvpn/ccd/setCcd`
 ```
 {
   "ccd": { 
@@ -44,15 +45,23 @@ Enable/install the plugin
   }
 }
 ```
+Creates a new CCD
 
-If a ccd with that `common_name` already exists, and update will be done, otherwise it will be created 
 
+`POST` on `api/openvpn/ccd/setCcd/<uuid>`
+same pyaload as above, but with `uuid` - Update 
+
+
+`POST` on `api/openvpn/ccd/setCcdByName`
+same pyaload as above, but with will do an update if the common_name already exists 
 
 #### Delete CCD
 
 `POST`  on `api/openvpn/ccd/delCcd/<uuid>`
-
 -> If the ccd matching the given <uuid> it will be deleted
+
+`POST`  on `api/openvpn/ccd/delCcdByName/<commanName>`
+-> If the ccd matching the given <commonName> it will be deleted
 
 #### Get CCD(s)
 
@@ -61,6 +70,9 @@ If a ccd with that `common_name` already exists, and update will be done, otherw
 
 `GET` on`api/openvpn/ccd/getCcd/<uuid>`
 - This will return you the ccd matching this uuid
+
+`GET` on `api/openvpn/ccd/getCcdByName/<commonName>` 
+- This will return a ccd matched by name
 
 ## Development
 

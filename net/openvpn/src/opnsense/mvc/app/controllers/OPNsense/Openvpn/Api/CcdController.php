@@ -68,7 +68,6 @@ class CcdController extends ApiMutableModelControllerBase
      * So this will automatically update if a name matches an existing entry or create
      * if that name yet does not exist
      *
-     * @param string|null $uuid item unique id
      * @return array
      */
     public function setCcdByNameAction()
@@ -112,7 +111,32 @@ class CcdController extends ApiMutableModelControllerBase
         return array();
     }
 
+    /**
+     * @param string|null $uuid item unique id
+     * @return array
+     */
+    public function getCcdByNameAction($commonName = null)
+    {
 
+        if ($commonName == null) {
+            // list all
+            return array($this->getModel()->getNodes());
+        } else {
+            $lookupUuid = $this->getModel()->getUuidByCcdName($commonName);
+            $node = $this->getModel()->getNodeByReference('ccds.ccd.' . $lookupUuid);
+            if ($node != null) {
+                // return node
+                return array("ccd" => $node->getNodes());
+            }
+        }
+        return array();
+    }
+
+
+    /**
+     * @param $uuid
+     * @return array
+     */
     public function delCcdAction($uuid)
     {
         $result = array('result' => 'failed');
@@ -126,7 +150,34 @@ class CcdController extends ApiMutableModelControllerBase
             OpenVpn::deleteCCD($ccd->common_name);
             if ($this->getModel()->ccds->ccd->del($uuid)) {
                 $result = $this->validateAndSave();
-                $result['modified_uuid'] = $uuid;
+                $result['removed_uuid'] = $uuid;
+                return $result;
+            }
+
+            return [];
+        }
+        return $result;
+    }
+
+    /**
+     * @param $commonName
+     * @return array
+     */
+    public function delCcdByNameAction($commonName)
+    {
+        $result = array('result' => 'failed');
+        if ($this->request->isPost()) {
+            $lookupUuid = $this->getModel()->getUuidByCcdName($commonName);
+            $node = $this->getModel()->getNodeByReference("ccds.ccd.$lookupUuid");
+            if ($node == NULL) {
+                return [];
+            }
+
+            $ccd = CcdDts::fromModelNode($node->getNodes());
+            OpenVpn::deleteCCD($ccd->common_name);
+            if ($this->getModel()->ccds->ccd->del($lookupUuid)) {
+                $result = $this->validateAndSave();
+                $result['removed_uuid'] = $lookupUuid;
                 return $result;
             }
 
