@@ -8,6 +8,7 @@ use \OPNsense\Core\Config;
 use \OPNsense\Openvpn\Ccd;
 use OPNsense\Openvpn\common\CcdDts;
 use OPNsense\Openvpn\common\OpenVpn;
+use Phalcon\Http\Response\Headers;
 
 /**
  * Class CcdController
@@ -51,9 +52,11 @@ class CcdController extends ApiMutableModelControllerBase
                 $result['modified_uuid'] = $this->getModel()->getUuidByCcdName($data['common_name']);
                 return $result;
             } else {
+                http_response_code(405);
                 return ["result" => "failed", 'validation' => "a ccd with the name '{$data['common_name']}' already exists"];
             }
         }
+        http_response_code(500);
         return array("result" => "failed");
     }
 
@@ -89,6 +92,7 @@ class CcdController extends ApiMutableModelControllerBase
             $result['modified_uuid'] = $this->getModel()->getUuidByCcdName($data['common_name']);
             return $result;
         }
+        http_response_code(500);
         return array("result" => "failed");
     }
 
@@ -107,8 +111,11 @@ class CcdController extends ApiMutableModelControllerBase
                 // return node
                 return array("ccd" => $node->getNodes());
             }
+            else {
+                http_response_code(404);
+                return array();
+            }
         }
-        return array();
     }
 
     /**
@@ -117,7 +124,6 @@ class CcdController extends ApiMutableModelControllerBase
      */
     public function getCcdByNameAction($commonName = null)
     {
-
         if ($commonName == null) {
             // list all
             return array($this->getModel()->getNodes());
@@ -128,8 +134,11 @@ class CcdController extends ApiMutableModelControllerBase
                 // return node
                 return array("ccd" => $node->getNodes());
             }
+            else {
+                http_response_code(404);
+                return array();
+            }
         }
-        return array();
     }
 
 
@@ -143,6 +152,7 @@ class CcdController extends ApiMutableModelControllerBase
         if ($this->request->isPost()) {
             $node = $this->getModel()->getNodeByReference("ccds.ccd.$uuid");
             if ($node == NULL) {
+                http_response_code(404);
                 return [];
             }
 
@@ -153,9 +163,11 @@ class CcdController extends ApiMutableModelControllerBase
                 $result['removed_uuid'] = $uuid;
                 return $result;
             }
-
+            http_response_code(404);
             return [];
         }
+
+        http_response_code(500);
         return $result;
     }
 
@@ -170,6 +182,7 @@ class CcdController extends ApiMutableModelControllerBase
             $lookupUuid = $this->getModel()->getUuidByCcdName($commonName);
             $node = $this->getModel()->getNodeByReference("ccds.ccd.$lookupUuid");
             if ($node == NULL) {
+                http_response_code(404);
                 return [];
             }
 
@@ -181,8 +194,11 @@ class CcdController extends ApiMutableModelControllerBase
                 return $result;
             }
 
+            http_response_code(404);
             return [];
         }
+
+        http_response_code(500);
         return $result;
     }
 }
