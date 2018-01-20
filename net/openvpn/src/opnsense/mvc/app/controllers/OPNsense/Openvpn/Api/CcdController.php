@@ -32,7 +32,6 @@ class CcdController extends ApiMutableModelControllerBase
      * If uuid is given, operates as update but ensures name is unique ( fails otherwise )
      * if uud is omited, operates as create
      * @param string|null $uuid item unique id
-     * @return array
      */
     public function setCcdAction($uuid = null)
     {
@@ -47,17 +46,17 @@ class CcdController extends ApiMutableModelControllerBase
             $data = $this->request->getPost("ccd");
             if ($this->getModel()->getUuidByCcdName($data['common_name']) == NULL) {
                 $node->setNodes($data);
-                $result = $this->validateAndSave($node, 'ccd');
+                $this->validateAndSave($node, 'ccd');
                 OpenVpn::generateCCDconfigurationOnDisk([CcdDts::fromModelNode($data)]);
-                $result['modified_uuid'] = $this->getModel()->getUuidByCcdName($data['common_name']);
-                return $result;
+                $result['uuid'] = $this->getModel()->getUuidByCcdName($data['common_name']);
+                $this->returnData($result);
             } else {
                 http_response_code(405);
-                return ["result" => "failed", 'validation' => "a ccd with the name '{$data['common_name']}' already exists"];
+                $this->returnError("a ccd with the name '{$data['common_name']}' already exists");
             }
         }
         http_response_code(500);
-        return array("result" => "failed");
+        $this->returnError("only POST supported");
     }
 
     /**
@@ -71,7 +70,6 @@ class CcdController extends ApiMutableModelControllerBase
      * So this will automatically update if a name matches an existing entry or create
      * if that name yet does not exist
      *
-     * @return array
      */
     public function setCcdByNameAction()
     {
@@ -89,54 +87,65 @@ class CcdController extends ApiMutableModelControllerBase
             }
             $result = $this->validateAndSave($node, 'ccd');
             OpenVpn::generateCCDconfigurationOnDisk([CcdDts::fromModelNode($data)]);
-            $result['modified_uuid'] = $this->getModel()->getUuidByCcdName($data['common_name']);
-            return $result;
+            $result['uuid'] = $this->getModel()->getUuidByCcdName($data['common_name']);
+            $this->returnData($result);
         }
         http_response_code(500);
-        return array("result" => "failed");
+        $this->returnError("only POST supported");
     }
 
     /**
      * @param string|null $uuid item unique id
-     * @return array
      */
     public function getCcdAction($uuid = null)
     {
         if ($uuid == null) {
             // list all
-            return array($this->getModel()->getNodes());
+            $data = [];
+            foreach($this->getModel()->getNodes()['ccds']['ccd'] as $uuid => $ccd) {
+                $ccd['uuid'] = $uuid;
+                $data[] = $ccd;
+            }
+            $this->returnData($data);
         } else {
             $node = $this->getModel()->getNodeByReference('ccds.ccd.' . $uuid);
             if ($node != null) {
                 // return node
-                return array("ccd" => $node->getNodes());
+                $ccd = $node->getNodes();
+                $ccd['uuid'] = $uuid;
             }
             else {
                 http_response_code(404);
-                return array();
+                $this->returnError("not found");
             }
         }
     }
 
     /**
-     * @param string|null $uuid item unique id
-     * @return array
+     * @param string|null $commonName item unique id
      */
     public function getCcdByNameAction($commonName = null)
     {
         if ($commonName == null) {
             // list all
-            return array($this->getModel()->getNodes());
+            $data = [];
+            foreach($this->getModel()->getNodes()['ccds']['ccd'] as $uuid => $ccd) {
+                $ccd['uuid'] = $uuid;
+                $data[] = $ccd;
+            }
+            $this->returnData($data);
         } else {
             $lookupUuid = $this->getModel()->getUuidByCcdName($commonName);
             $node = $this->getModel()->getNodeByReference('ccds.ccd.' . $lookupUuid);
             if ($node != null) {
                 // return node
-                return array("ccd" => $node->getNodes());
+                $ccd = $node->getNodes();
+                $ccd['uuid'] = $lookupUuid;
+                $this->returnData($ccd);
             }
             else {
                 http_response_code(404);
-                return array();
+                $this->returnError("not found");
             }
         }
     }
@@ -144,7 +153,6 @@ class CcdController extends ApiMutableModelControllerBase
 
     /**
      * @param $uuid
-     * @return array
      */
     public function delCcdAction($uuid)
     {
@@ -153,27 +161,26 @@ class CcdController extends ApiMutableModelControllerBase
             $node = $this->getModel()->getNodeByReference("ccds.ccd.$uuid");
             if ($node == NULL) {
                 http_response_code(404);
-                return [];
+                $this->returnError("not found");
             }
 
             $ccd = CcdDts::fromModelNode($node->getNodes());
             OpenVpn::deleteCCD($ccd->common_name);
             if ($this->getModel()->ccds->ccd->del($uuid)) {
                 $result = $this->validateAndSave();
-                $result['removed_uuid'] = $uuid;
-                return $result;
+                $result['uuid'] = $uuid;
+                $this->returnData($result);
             }
             http_response_code(404);
-            return [];
+            $this->returnError("not found");
         }
 
         http_response_code(500);
-        return $result;
+        $this->returnError("only POST supported");
     }
 
     /**
      * @param $commonName
-     * @return array
      */
     public function delCcdByNameAction($commonName)
     {
@@ -183,7 +190,7 @@ class CcdController extends ApiMutableModelControllerBase
             $node = $this->getModel()->getNodeByReference("ccds.ccd.$lookupUuid");
             if ($node == NULL) {
                 http_response_code(404);
-                return [];
+                $this->returnError("not found");
             }
 
             $ccd = CcdDts::fromModelNode($node->getNodes());
@@ -191,14 +198,32 @@ class CcdController extends ApiMutableModelControllerBase
             if ($this->getModel()->ccds->ccd->del($lookupUuid)) {
                 $result = $this->validateAndSave();
                 $result['removed_uuid'] = $lookupUuid;
-                return $result;
+                $this->returnData($result);
             }
 
             http_response_code(404);
-            return [];
+            $this->returnError("not found");
         }
 
         http_response_code(500);
-        return $result;
+        $this->returnError("only POST supported");
+    }
+
+    private function returnData($data) {
+        $response = new \stdClass();
+        $response->data = $data;
+        $response->status = 'success';
+        header('Content-type: application/json');
+        echo json_encode($response);
+        exit(0);
+    }
+
+    private function returnError($message) {
+        $response = new \stdClass();
+        $response->status = "error";
+        $response->message = $message;
+        header('Content-type: application/json');
+        echo json_encode($response);
+        exit(0);
     }
 }
