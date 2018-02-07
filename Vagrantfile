@@ -49,7 +49,7 @@ Vagrant.configure("2") do |config|
 
     # install dev tools
     test.vm.provision "shell",
-      inline: "pkg update && pkg install -y vim-lite joe nano gnu-watch git tmux screen",
+      inline: "pkg update && pkg install -y joe nano gnu-watch git tmux screen",
       run: "once"
 
     # replace the public ssh key for the root user with the one vagrant deployed for comms before we restart - or we lock vagrant out
