@@ -184,7 +184,6 @@ class CcdController extends ApiMutableModelControllerBase
      */
     public function delCcdByNameAction($commonName)
     {
-        $result = array('result' => 'failed');
         if ($this->request->isPost()) {
             $lookupUuid = $this->getModel()->getUuidByCcdName($commonName);
             $node = $this->getModel()->getNodeByReference("ccds.ccd.$lookupUuid");
@@ -205,6 +204,26 @@ class CcdController extends ApiMutableModelControllerBase
             $this->returnError("not found");
         }
 
+        http_response_code(500);
+        $this->returnError("only POST supported");
+    }
+
+    /**
+     * Regenerate all ccds for all servers
+     */
+    public function generateCcds()
+    {
+        if ($this->request->isPost()) {
+            try {
+                OpenVpn::generateCCDconfigurationOnDisk();
+                http_response_code(200);
+                $this->returnData([]);
+            } catch(\Exception $e) {
+                http_response_code(500);
+                $this->returnError("Error:".$e->getMessage());
+            }
+
+        }
         http_response_code(500);
         $this->returnError("only POST supported");
     }
