@@ -74,6 +74,11 @@ same pyaload as above, but with will do an update if the common_name already exi
 `GET` on `api/openvpn/ccd/getCcdByName/<commonName>` 
 - This will return a ccd matched by name
 
+#### Generate all CCDS
+
+`POST` on `api/openvpn/ccd/generateCcds`
+- no payload needed, this will regenerate all existing CCDs for all servers and write them on the disk for openvpn to pickup during connections
+
 ## Development
 
 ### Start
