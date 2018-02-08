@@ -211,7 +211,7 @@ class CcdController extends ApiMutableModelControllerBase
     /**
      * Regenerate all ccds for all servers
      */
-    public function generateCcds()
+    public function generateCcdsAction()
     {
         if ($this->request->isPost()) {
             try {
