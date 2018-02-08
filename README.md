@@ -16,7 +16,7 @@ You should install / use it along the core openvpn "plugin" - consider this plug
 On your opnsense box do
 
 ```bash
-setenv openvpn_version 0.0.5
+setenv openvpn_version 0.0.6
 curl -Lo os-openvpn-devel-${openvpn_version}.txz https://github.com/EugenMayer/opnsense-openvpn-plugin/raw/master/dist/os-openvpn-devel-${openvpn_version}.txz
 pkg add os-openvpn-devel-${openvpn_version}.txz
 ```
