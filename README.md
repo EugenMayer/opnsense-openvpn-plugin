@@ -1,3 +1,5 @@
+**DISCONTINUED:** this plugin has been for no discontinued since it has been replaced with https://github.com/opnsense/core/pull/3277 , also see https://github.com/EugenMayer/opnsense-openvpn-ldap-cso
+
 # WAT
 
 Yet partial implementation of the OpenVPN plugin in MVC style ( not legacy ) offering API interface to automate things.
